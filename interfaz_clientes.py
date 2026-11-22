@@ -32,6 +32,91 @@ logger.registrar_evento("Se inició la interfaz gráfica de clientes.")
 # ==============================================================================
 # 2. FUNCIONES PARA QUE LOS BOTONES Y LA TABLA FUNCIONEN
 # ==============================================================================
+def escribir_en_logs(mensaje):
+    """Esta función escribe un mensaje nuevo en el cuadro rojo de LOGS."""
+    # Habilitamos el cuadro de texto para poder escribir en él
+    texto_logs.config(state="normal")
+    # Insertamos el mensaje al final con un salto de línea (\n)
+    texto_logs.insert(tk.END, mensaje + "\n")
+    # Hacemos scroll automático hacia abajo para ver siempre el último mensaje
+    texto_logs.see(tk.END)
+    # Volvemos a bloquear el cuadro de texto para que el usuario no lo borre por accidente
+    texto_logs.config(state="disabled")
+ 
+ 
+def actualizar_tabla():
+    """Esta función borra la tabla y la vuelve a llenar con los clientes del gestor."""
+    # Primero borramos todas las filas que ya estaban en la tabla para no repetirlas
+    for fila in tabla.get_children():
+        tabla.delete(fila)
+ 
+    # Recorremos la lista de clientes que tiene guardada el gestor
+    for cliente in gestor._clientes:
+        # Insertamos cada cliente como una fila nueva en la tabla 
+        tabla.insert(
+            "",
+            tk.END,
+            values=(
+                cliente.id,
+                cliente.nombre,
+                cliente.documento,
+                cliente.email,
+                cliente.telefono,
+            ),
+        )
+ 
+ 
+def limpiar_campos():
+    """Esta función borra lo que el usuario escribió en las cajitas de texto."""
+    entrada_id.delete(0, tk.END)
+    entrada_nombre.delete(0, tk.END)
+    entrada_documento.delete(0, tk.END)
+    entrada_email.delete(0, tk.END)
+    entrada_telefono.delete(0, tk.END)
+ 
+ 
+def registrar_cliente_boton():
+    """Esta función se ejecuta cuando el usuario hace clic en 'Registrar cliente'."""
+    # Sacamos el texto que escribió el usuario en cada cajita (Entry)
+    id_cli = entrada_id.get()
+    nombre = entrada_nombre.get()
+    documento = entrada_documento.get()
+    email = entrada_email.get()
+    telefono = entrada_telefono.get()
+ 
+    # Usamos try/except para atrapar los errores si el usuario escribe datos inválidos
+    try:
+        # Intentamos crear el objeto Cliente.
+        # Aquí adentro la clase Cliente revisa que el nombre, documento, email y teléfono sean válidos.
+        nuevo_cliente = Cliente(id_cli, nombre, documento, email, telefono)
+ 
+        # Le pedimos al gestor que guarde al cliente en su lista
+        se_guardo = gestor.registrar_cliente(nuevo_cliente)
+ 
+        # Si el gestor devolvió True, significa que no estaba repetido y se guardó bien
+        if se_guardo:
+            # Actualizamos la tabla para que aparezca el cliente nuevo
+            actualizar_tabla()
+            # Escribimos en el cuadro de logs de la ventana
+            escribir_en_logs(f"[OK] Se registró a {nuevo_cliente.nombre} (ID: {nuevo_cliente.id})")
+            # Mostramos una ventanita avisando que todo salió bien
+            messagebox.showinfo("Registro exitoso", "El cliente se registró correctamente.")
+            # Limpiamos las cajitas para poder registrar otro cliente
+            limpiar_campos()
+        else:
+            # Si devolvió False, es porque ya existía un cliente con ese ID o documento
+            escribir_en_logs(f"[ERROR] Ya existe un cliente con ID '{id_cli}' o documento '{documento}'.")
+            messagebox.showerror(
+                "Cliente duplicado",
+                "Ya existe un cliente registrado con ese ID o con ese documento.",
+            )
+ 
+    except SoftwareFJError as error:
+        # Si faltó algún dato o el correo/teléfono/documento está mal, entramos aquí
+        logger.registrar_error(error, "Error al registrar cliente desde la interfaz")
+        escribir_en_logs(f"[ERROR] {error}")
+        # Mostramos el mensaje de error exacto en una ventanita emergente
+        messagebox.showerror("Dato inválido", str(error))
 
 # ==============================================================================
 # 3. CREACIÓN DE LA VENTANA PRINCIPAL (TKINTER)
