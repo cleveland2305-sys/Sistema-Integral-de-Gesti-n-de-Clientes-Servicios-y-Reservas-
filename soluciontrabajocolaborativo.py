@@ -588,4 +588,7 @@ def ejecutar_simulacion() -> None:
     logger.registrar_evento("=== FIN DE SIMULACIÓN SIN INTERRUPCIONES ===")
 
 
-ejecutar_simulacion();
+# Solo ejecutamos la simulación si abrimos este archivo directamente,
+# así no se ejecuta sola cuando la importamos desde interfaz_clientes.py
+if __name__ == "__main__":
+    ejecutar_simulacion()
